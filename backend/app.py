@@ -31,12 +31,10 @@ def initialize():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
     return jsonify({"status": "healthy", "message": "Service is running"})
 
 @app.route('/api/recommendations/collaborative', methods=['GET'])
 def get_collaborative_recommendations():
-    """Get collaborative filtering recommendations"""
     try:
         user_id = request.args.get('user_id')
         if not user_id:
@@ -53,14 +51,12 @@ def get_collaborative_recommendations():
             "user_id": user_id,
             "recommendations": recommendations
         })
-        
     except Exception as e:
         logger.error(f"Error in collaborative recommendations: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/recommendations/content-based', methods=['GET'])
 def get_content_based_recommendations():
-    """Get content-based recommendations"""
     try:
         place_id = request.args.get('place_id')
         if not place_id:
@@ -78,14 +74,12 @@ def get_content_based_recommendations():
             "place_id": place_id,
             "recommendations": recommendations
         })
-        
     except Exception as e:
         logger.error(f"Error in content-based recommendations: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/recommendations/evaluate', methods=['GET'])
 def evaluate_recommendations():
-    """Evaluate the collaborative filtering model"""
     try:
         metrics = collaborative_recommender.evaluate()
         return jsonify({"metrics": metrics})
@@ -95,7 +89,6 @@ def evaluate_recommendations():
 
 @app.route('/api/restaurants/<place_id>/details', methods=['GET'])
 def get_restaurant_details(place_id):
-    """Get restaurant details"""
     try:
         place_id = int(place_id)
 
@@ -136,21 +129,16 @@ def get_restaurant_details(place_id):
             "hours": hours,
             "parking": parking
         })
-
     except Exception as e:
         logger.error(f"Error getting restaurant details: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
-
-
 @app.route('/api/foods', methods=['GET'])
 def get_foods():
-    """Get list of food items from chefmozcuisine.csv"""
     try:
         cuisine_path = 'data/chefmozcuisine.csv'
         cuisine_df = pd.read_csv(cuisine_path)
 
-        # Group foods by Rcuisine and prepare a list of items
         food_items = cuisine_df.groupby('Rcuisine').apply(
             lambda x: x.to_dict('records')
         ).to_dict()
@@ -162,10 +150,3 @@ def get_foods():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=3001)  # Change the port if needed
-
-
-
-
-
-
-

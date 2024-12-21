@@ -53,8 +53,8 @@ class CollaborativeRecommender:
             for place_id in places_to_predict:
                 pred = self.model.predict(user_id, place_id)
                 predictions.append({
-                    'place_id': place_id,
-                    'predicted_rating': pred.est
+                    'place_id': int(place_id),
+                    'predicted_rating': float(pred.est)
                 })
             
             # Sort and return top N recommendations

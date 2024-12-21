@@ -29,6 +29,8 @@ function App() {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [restaurantDetails, setRestaurantDetails] = useState({});
+  const [collaborativeRecommendations, setCollaborativeRecommendations] = useState([]);
+  const [contentRecommendations, setContentRecommendations] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Hàm random ảnh từ danh sách ảnh mẫu
@@ -63,6 +65,28 @@ function App() {
   const closeModal = () => {
     setIsModalOpen(false);
     setRestaurantDetails({});
+  };
+
+  // Fetch collaborative recommendations
+  const fetchCollaborativeRecommendations = async (userId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/recommendations/collaborative?user_id=${userId}&n_recommendations=5`);
+      const data = await response.json();
+      setCollaborativeRecommendations(data.recommendations || []);
+    } catch (error) {
+      console.error("Error fetching collaborative recommendations:", error);
+    }
+  };
+
+  // Fetch content-based recommendations
+  const fetchContentRecommendations = async (placeId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/recommendations/content-based?place_id=${placeId}&n_recommendations=5`);
+      const data = await response.json();
+      setContentRecommendations(data.recommendations || []);
+    } catch (error) {
+      console.error("Error fetching content-based recommendations:", error);
+    }
   };
 
   // Xử lý tìm kiếm
@@ -110,7 +134,7 @@ function App() {
           <div className="logo" onClick={() => window.location.reload()}>FoodFlix</div>
           <ul className="navbar-links">
             <li>Trang chủ</li>
-            <li>Âm thực</li>
+            <li>Ẩm thực</li>
             <li>Nhà hàng</li>
             <li>Yêu thích</li>
           </ul>
@@ -141,6 +165,8 @@ function App() {
               </div>
             )}
             <button className="search-button" onClick={handleSearch}>Search</button>
+            <button className="collaborative-recommendations-button" onClick={() => fetchCollaborativeRecommendations('current_user_id')}>Show Collaborative Recommendations</button>
+            <button className="content-recommendations-button" onClick={() => fetchContentRecommendations(135085)}>Show Content-Based Recommendations</button>
           </div>
         </div>
       </header>
@@ -163,6 +189,38 @@ function App() {
             </div>
           </div>
         ))}
+
+        {/* Gợi ý từ Collaborative Filtering */}
+        <div className="recommendations">
+          <h2>Collaborative Recommendations(Lọc Tương Tác)</h2>
+          <p>Những đề xuất này dựa trên những gì người dùng khác có cùng sở thích đã thích.</p>
+          <div className="row">
+            {collaborativeRecommendations.map((item, idx) => (
+              <div key={idx} className="food-card" onClick={() => fetchRestaurantDetails(item.placeID)}>
+                <img src={getRandomImage()} alt={item.name} />
+                <div className="food-info">
+                  <p>{item.name}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Gợi ý từ Content-Based Filtering */}
+        <div className="recommendations">
+          <h2>Content-Based Recommendations(Lọc dựa trên nội dung)</h2>
+          <p>Những đề xuất này dựa trên đặc điểm của nhà hàng bạn đã thích.</p>
+          <div className="row">
+            {contentRecommendations.map((item, idx) => (
+              <div key={idx} className="food-card" onClick={() => fetchRestaurantDetails(item.placeID)}>
+                <img src={getRandomImage()} alt={item.name} />
+                <div className="food-info">
+                  <p>{item.name}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Modal chi tiết nhà hàng */}
