@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import food1 from "./assets/burger.jpg";
@@ -30,8 +29,8 @@ function App() {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [restaurantDetails, setRestaurantDetails] = useState({});
-  const [collaborativeRecommendations, setCollaborativeRecommendations] = useState([]);
   const [contentRecommendations, setContentRecommendations] = useState([]);
+  const [collaborativeRecommendations, setCollaborativeRecommendations] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getRandomImage = () => {
@@ -54,10 +53,21 @@ function App() {
   }, []);
 
   const fetchRestaurantDetails = async (place_id) => {
-    const response = await fetch(`http://127.0.0.1:3001/api/restaurants/${place_id}/details`);
-    const data = await response.json();
-    setRestaurantDetails(data || {});
-    setIsModalOpen(true);
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/restaurants/${place_id}/details`);
+      const details = await response.json();
+      setRestaurantDetails(details || {});
+
+      const recommendationsResponse = await fetch(
+        `http://127.0.0.1:3001/api/recommendations/content-based?place_id=${place_id}&n_recommendations=5`
+      );
+      const recommendationsData = await recommendationsResponse.json();
+      setContentRecommendations(recommendationsData.recommendations || []);
+
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching restaurant details or recommendations:", error);
+    }
   };
 
   const closeModal = () => {
@@ -65,9 +75,11 @@ function App() {
     setRestaurantDetails({});
   };
 
-  const fetchCollaborativeRecommendations = async (userId) => {
+  const fetchCollaborativeRecommendations = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:3001/api/recommendations/collaborative?user_id=${userId}&n_recommendations=5`);
+      const response = await fetch(
+        "http://127.0.0.1:3001/api/recommendations/collaborative?user_id=current_user_id&n_recommendations=5"
+      );
       const data = await response.json();
       setCollaborativeRecommendations(data.recommendations || []);
     } catch (error) {
@@ -75,9 +87,11 @@ function App() {
     }
   };
 
-  const fetchContentRecommendations = async (placeId) => {
+  const fetchContentRecommendations = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:3001/api/recommendations/content-based?place_id=${placeId}&n_recommendations=5`);
+      const response = await fetch(
+        "http://127.0.0.1:3001/api/recommendations/content-based?place_id=135085&n_recommendations=5"
+      );
       const data = await response.json();
       setContentRecommendations(data.recommendations || []);
     } catch (error) {
@@ -87,10 +101,11 @@ function App() {
 
   const handleSearch = () => {
     const filtered = {};
-    Object.keys(foods).forEach(category => {
-      const filteredItems = foods[category].filter(item => 
-        (item.Rcuisine && item.Rcuisine.toLowerCase().includes(query.toLowerCase())) || 
-        (item.name && item.name.toLowerCase().includes(query.toLowerCase()))
+    Object.keys(foods).forEach((category) => {
+      const filteredItems = foods[category].filter(
+        (item) =>
+          (item.Rcuisine && item.Rcuisine.toLowerCase().includes(query.toLowerCase())) ||
+          (item.name && item.name.toLowerCase().includes(query.toLowerCase()))
       );
       if (filteredItems.length > 0) {
         filtered[category] = filteredItems;
@@ -106,10 +121,12 @@ function App() {
 
     if (value.length > 1) {
       const newSuggestions = [];
-      Object.keys(foods).forEach(category => {
-        foods[category].forEach(item => {
-          if ((item.Rcuisine && item.Rcuisine.toLowerCase().includes(value.toLowerCase())) || 
-              (item.name && item.name.toLowerCase().includes(value.toLowerCase()))) {
+      Object.keys(foods).forEach((category) => {
+        foods[category].forEach((item) => {
+          if (
+            (item.Rcuisine && item.Rcuisine.toLowerCase().includes(value.toLowerCase())) ||
+            (item.name && item.name.toLowerCase().includes(value.toLowerCase()))
+          ) {
             newSuggestions.push(item.name);
           }
         });
@@ -124,7 +141,9 @@ function App() {
     <div className="App">
       <header className="navbar">
         <div className="navbar-left">
-          <div className="logo" onClick={() => window.location.reload()}>FoodFlix</div>
+          <div className="logo" onClick={() => window.location.reload()}>
+            FoodFlix
+          </div>
           <ul className="navbar-links">
             <li>Trang chủ</li>
             <li>Ẩm thực</li>
@@ -144,8 +163,8 @@ function App() {
             {suggestions.length > 0 && (
               <div className="search-suggestions">
                 {suggestions.map((suggestion, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="search-suggestion"
                     onClick={() => {
                       setQuery(suggestion);
@@ -157,99 +176,124 @@ function App() {
                 ))}
               </div>
             )}
-            <button className="search-button" onClick={handleSearch}>Search</button>
-            <button className="collaborative-recommendations-button" onClick={() => fetchCollaborativeRecommendations('current_user_id')}>
+            <button className="search-button" onClick={handleSearch}>
+              Search
+            </button>
+            <button className="collaborative-recommendations-button" onClick={fetchCollaborativeRecommendations}>
               Show Collaborative Recommendations
             </button>
-            <button className="content-recommendations-button" onClick={() => fetchContentRecommendations(135085)}>
+            <button className="content-recommendations-button" onClick={fetchContentRecommendations}>
               Show Content-Based Recommendations
+           
             </button>
           </div>
         </div>
       </header>
 
-      <div className="recommendations">
-        <h2>Collaborative Recommendations (Lọc Cộng Tác)</h2>
-        <p>Những đề xuất này dựa trên những gì người dùng khác có cùng sở thích giống bạn.</p>
-        <div className="row">
-          {collaborativeRecommendations.map((item, idx) => (
-            <div key={idx} className="food-card" onClick={() => fetchRestaurantDetails(item.placeID)}>
-              <img src={getRandomImage()} alt={item.name} />
-              <div className="food-info">
-                <p>{item.name || `Place ID: ${item.placeID}`}</p>
+      {/* Danh sách Collaborative Recommendations */}
+      {collaborativeRecommendations.length > 0 && (
+        <div className="recommendations">
+          <h2>Collaborative Recommendations (Lọc Cộng Tác)</h2>
+          <p>Những đề xuất này dựa trên những gì người dùng khác có cùng sở thích giống bạn.</p>
+          <div className="row">
+            {collaborativeRecommendations.map((item, idx) => (
+              <div
+                key={idx}
+                className="food-card"
+                onClick={() => fetchRestaurantDetails(item.placeID)}
+              >
+                <img src={getRandomImage()} alt={item.name} />
+                <div className="food-info">
+                  <p>{item.name || `Place ID: ${item.placeID}`}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="recommendations">
-        <h2>Content-Based Recommendations (Lọc dựa trên nội dung)</h2>
-        <p>Những đề xuất này dựa trên đặc điểm của nhà hàng bạn muốn.</p>
-        <div className="row">
-          {contentRecommendations.map((item, idx) => (
-            <div key={idx} className="food-card" onClick={() => fetchRestaurantDetails(item.placeID)}>
-              <img src={getRandomImage()} alt={item.name} />
-              <div className="food-info">
-                <p>{item.name}</p>
+      {/* Danh sách Content-Based Recommendations */}
+      {contentRecommendations.length > 0 && (
+        <div className="recommendations">
+          <h2>Content-Based Recommendations (Lọc Dựa Trên Nội Dung)</h2>
+          <p>Những đề xuất này dựa trên đặc điểm của nhà hàng bạn muốn.</p>
+          <div className="row">
+            {contentRecommendations.map((item, idx) => (
+              <div
+                key={idx}
+                className="food-card"
+                onClick={() => fetchRestaurantDetails(item.placeID)}
+              >
+                <img src={getRandomImage()} alt={item.name} />
+                <div className="food-info">
+                  <p>{item.name || `Place ID: ${item.placeID}`}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
+      {/* Modal hiển thị thông tin chi tiết */}
+      {isModalOpen && (
+  <div className="modal" onClick={closeModal}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {/* Nút thoát modal */}
+      <button className="close-modal" onClick={closeModal}>
+        &times;
+      </button>
+      <h2>Chi tiết nhà hàng</h2>
+      <p><strong>Place ID:</strong> {restaurantDetails.place_id}</p>
+      <p><strong>Name:</strong> {restaurantDetails.name || "N/A"}</p>
+      <p><strong>Address:</strong> {restaurantDetails.address1 || "N/A"}</p>
+      <p><strong>City:</strong> {restaurantDetails.city || "N/A"}</p>
+      <p><strong>State:</strong> {restaurantDetails.state || "N/A"}</p>
+      <p><strong>Country:</strong> {restaurantDetails.country || "N/A"}</p>
+      <p><strong>Cuisines:</strong> {Array.isArray(restaurantDetails.cuisines) ? restaurantDetails.cuisines.join(", ") : "N/A"}</p>
+      <p><strong>Hours:</strong> {Array.isArray(restaurantDetails.hours) ? restaurantDetails.hours.map(hour => `${hour.days}: ${hour.hours}`).join(", ") : "N/A"}</p>
+      <p><strong>Parking:</strong> {restaurantDetails.parking || "N/A"}</p>
+
+      <h3>Danh sách các nhà hàng tương tự</h3>
+      <div className="row">
+        {contentRecommendations.map((item, idx) => (
+          <div key={idx} className="food-card">
+            <img src={getRandomImage()} alt={item.name || `Place ID: ${item.placeID}`} />
+            <div className="food-info">
+              <p>{item.name || `Place ID: ${item.placeID}`}</p>
+              <p>{item.state || "State: N/A"}</p>
+              <p>{item.country || "Country: N/A"}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+
+      {/* Danh sách tất cả các nhà hàng */}
       <div className="content">
         {Object.keys(foods).map((category, index) => (
           <div key={index} className="category">
             <h2>{category}</h2>
             <div className="row">
-              {Array.isArray(foods[category]) && foods[category].map((item, idx) => (
-                <div key={idx} className="food-card" onClick={() => fetchRestaurantDetails(item.placeID)}>
-                  <img src={getRandomImage()} alt={item.Rcuisine} />
-                  <div className="food-info">
-                    <p>{item.placeID}</p>
+              {Array.isArray(foods[category]) &&
+                foods[category].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="food-card"
+                    onClick={() => fetchRestaurantDetails(item.placeID)}
+                  >
+                    <img src={getRandomImage()} alt={item.Rcuisine} />
+                    <div className="food-info">
+                      <p>{item.name || `Place ID: ${item.placeID}`}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         ))}
       </div>
-
-      {isModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close" onClick={closeModal}>&times;</span>
-            <h2>Restaurant Details</h2>
-            <p><strong>Place ID:</strong> {restaurantDetails.place_id}</p>
-            <p><strong>Name:</strong> {restaurantDetails.name || 'N/A'}</p>
-            <p><strong>Address:</strong> {restaurantDetails.address1 || 'N/A'}</p>
-            <p><strong>City:</strong> {restaurantDetails.city || 'N/A'}</p>
-            <p><strong>State:</strong> {restaurantDetails.state || 'N/A'}</p>
-            <p><strong>Country:</strong> {restaurantDetails.country || 'N/A'}</p>
-            <p><strong>Cuisines:</strong> {Array.isArray(restaurantDetails.cuisines) ? restaurantDetails.cuisines.join(', ') : 'N/A'}</p>
-            <p><strong>Hours:</strong> {Array.isArray(restaurantDetails.hours) ? restaurantDetails.hours.map(hour => `${hour.days}: ${hour.hours}`).join(', ') : 'N/A'}</p>
-            <p><strong>Parking:</strong> {restaurantDetails.parking || 'N/A'}</p>
-          </div>
-        </div>
-      )}
-
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <h3>About Us</h3>
-            <p>Information about FoodFlix.</p>
-          </div>
-          <div className="footer-section">
-            <h3>Contact Us</h3>
-            <p>Email: tranhoangiahuyk15@siu.edu.vn</p>
-          </div>
-          <div className="footer-section">
-            <h3>Follow Us</h3>
-            <p>Social media links</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
