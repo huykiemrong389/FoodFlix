@@ -16,7 +16,7 @@ class ContentBasedRecommender:
         try:
             self.places_df = pd.read_csv(places_path)
             # Sử dụng các cột khác thay cho `cuisine`
-            self.places_df['combined'] = self.places_df.apply(lambda x: f"{x['name']} {x['address']} {x['city']} {x['state']}", axis=1)
+            self.places_df['combined'] = self.places_df.apply(lambda x: f"{x['price']} {x['address']} {x['city']} {x['state']}", axis=1)
             
             tfidf = TfidfVectorizer(stop_words='english')
             self.tfidf_matrix = tfidf.fit_transform(self.places_df['combined'])
