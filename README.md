@@ -32,7 +32,7 @@ npm install
 Start the backend server:
 ```bash
 python app.py
-
+```
 3. Run Frontend
 Navigate to the frontend folder:
 ```bash
@@ -50,10 +50,10 @@ The frontend application will run at http://localhost:3000.
 
 API Endpoints
 
-GET /api/foods: Fetches all restaurants.
-GET /api/restaurants/:place_id/details: Fetches detailed information of a specific restaurant.
-GET /api/recommendations/collaborative: Fetches collaborative filtering recommendations.
-GET /api/recommendations/content-based: Fetches content-based filtering recommendations.
+- GET /api/foods: Fetches all restaurants.
+- GET /api/restaurants/:place_id/details: Fetches detailed information of a specific restaurant.
+- GET /api/recommendations/collaborative: Fetches collaborative filtering recommendations.
+- GET /api/recommendations/content-based: Fetches content-based filtering recommendations.
 Technologies Used
 
 Frontend: React.js
